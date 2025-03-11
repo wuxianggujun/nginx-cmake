@@ -1,25 +1,19 @@
 # 在文件开头设置全局编译选项
 if(MSVC)
-    # 使用传统方式设置动态运行时库 - 不使用MSVC_RUNTIME_LIBRARY属性
+    # 统一所有库使用动态运行时库/MD，匹配OpenSSL的编译方式
     foreach(flag_var
         CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-        CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-        # 替换/MT为/MD
+        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE)
         string(REGEX REPLACE "/MT" "/MD" ${flag_var} "${${flag_var}}")
     endforeach()
     
-    # 直接设置MD或MDd标志，而不是使用MSVC_RUNTIME_LIBRARY
+    # 确保在Debug模式中使用/MDd
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MDd")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MD")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
 endif()
 
 # PCRE配置 - 确保使用动态运行时
 if(EXISTS "${PCRE_DIR}/CMakeLists.txt")
-    # 关键修改：静态运行时设为OFF
     set(PCRE_STATIC_RUNTIME OFF CACHE BOOL "" FORCE)
     set(PCRE_BUILD_TESTS OFF CACHE BOOL "")
     set(PCRE_BUILD_PCREGREP OFF CACHE BOOL "")
@@ -31,65 +25,39 @@ if(EXISTS "${PCRE_DIR}/CMakeLists.txt")
     set(PCRE_BUILD_PCRE16 OFF CACHE BOOL "")
     set(PCRE_BUILD_PCRE32 OFF CACHE BOOL "")
     
-    # 添加PCRE前确保动态运行时设置被应用
     add_subdirectory(${PCRE_DIR})
     
-    # 设置PCRE的包含目录和库
+    # 简化PCRE库设置
     set(PCRE_INCLUDE_DIRS ${PCRE_DIR}/include CACHE PATH "PCRE include directory")
-    
     set(PCRE_LIBRARIES pcre CACHE PATH "PCRE library")
-    
-    # 调试输出PCRE库信息
-    message(STATUS "PCRE库: ${PCRE_LIBRARIES}")
 endif()
 
-# ZLIB配置 - 确保使用动态运行时
+# ZLIB配置
 if(EXISTS "${ZLIB_DIR}")
-    # 设置ZLIB选项
     set(ZLIB_BUILD_SHARED_LIBS OFF CACHE BOOL "")
     set(SKIP_INSTALL_ALL ON CACHE BOOL "")
     set(ZLIB_BINARY_DIR "${CMAKE_BINARY_DIR}/third_party/zlib" CACHE PATH "ZLIB binary directory")
     
-    # 添加ZLIB子目录
     add_subdirectory(${ZLIB_DIR} ${ZLIB_BINARY_DIR})
+    
+    # 简化ZLIB库设置
+    set(ZLIB_INCLUDE_DIRS 
+        ${ZLIB_DIR}
+        ${ZLIB_BINARY_DIR}
+        CACHE PATH "ZLIB include directories"
+    )
+    set(ZLIB_LIBRARIES zlibstatic CACHE PATH "ZLIB library")
 endif()
 
-# OpenSSL配置 - 调试版本
-set(OPENSSL_ROOT_DIR ${OPENSSL_DIR})
-set(OPENSSL_INCLUDE_DIR "${OPENSSL_DIR}/include")
-
-# 调试输出OpenSSL库文件是否存在
-file(GLOB SSL_LIB_FILES "${OPENSSL_DIR}/lib/libssl*.lib" "${OPENSSL_DIR}/lib/ssl*.lib")
-file(GLOB CRYPTO_LIB_FILES "${OPENSSL_DIR}/lib/libcrypto*.lib" "${OPENSSL_DIR}/lib/crypto*.lib")
-
-message(STATUS "SSL库文件: ${SSL_LIB_FILES}")
-message(STATUS "Crypto库文件: ${CRYPTO_LIB_FILES}")
-
-# 确保正确导入OpenSSL库
-if(EXISTS "${OPENSSL_DIR}/lib/libssl.lib" AND EXISTS "${OPENSSL_DIR}/lib/libcrypto.lib")
-    add_library(OpenSSL::SSL STATIC IMPORTED)
-    set_target_properties(OpenSSL::SSL PROPERTIES 
-        IMPORTED_LOCATION "${OPENSSL_DIR}/lib/libssl.lib"
-        INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE_DIR}"
-    )
-
-    add_library(OpenSSL::Crypto STATIC IMPORTED)
-    set_target_properties(OpenSSL::Crypto PROPERTIES 
-        IMPORTED_LOCATION "${OPENSSL_DIR}/lib/libcrypto.lib"
-        INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE_DIR}"
-    )
-    
-    # 确保被链接的库具有正确的依赖关系
-    set_property(TARGET OpenSSL::SSL APPEND PROPERTY 
-        INTERFACE_LINK_LIBRARIES OpenSSL::Crypto ws2_32 crypt32 advapi32)
-    
-    set(OPENSSL_FOUND TRUE)
-    message(STATUS "OpenSSL库配置完成")
-else()
-    message(FATAL_ERROR "OpenSSL库文件未找到: ${OPENSSL_DIR}/lib/libssl.lib, ${OPENSSL_DIR}/lib/libcrypto.lib")
-endif()
+# OpenSSL配置 - 简化
+set(OPENSSL_INCLUDE_DIRS "${OPENSSL_DIR}/include" CACHE PATH "OpenSSL include directory")
+set(OPENSSL_LIBRARIES 
+    "${OPENSSL_DIR}/lib/libssl.lib"
+    "${OPENSSL_DIR}/lib/libcrypto.lib"
+    CACHE PATH "OpenSSL libraries"
+)
 
 # 设置全局的第三方库变量
 set(NGX_HAVE_PCRE ON CACHE BOOL "Enable PCRE support")
 set(NGX_HAVE_ZLIB ON CACHE BOOL "Enable ZLIB support")
-set(NGX_HAVE_OPENSSL ${OPENSSL_FOUND} CACHE BOOL "Enable OpenSSL support")
+set(NGX_HAVE_OPENSSL ON CACHE BOOL "Enable OpenSSL support")

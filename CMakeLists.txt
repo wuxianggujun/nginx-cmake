@@ -26,7 +26,7 @@ set(NGINX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${NGINX_SOURCE_DIR}/cmake")
 
 # 设置nginx工作目录
-set(NGINX_WORK_DIR ${NGINX_SOURCE_DIR})
+set(NGINX_WORK_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # 设置第三方库路径
 set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
@@ -69,201 +69,9 @@ add_subdirectory(cmake)
 add_subdirectory(third_party)
 
 # 添加src作为子目录进行构建
-#add_subdirectory(src)
+add_subdirectory(src)
 
 file(GLOB_RECURSE nginx_HEADERS "${NGINX_SOURCE_DIR}/src/*.h")
-
-
-set(nginx_SOURCES
-        ${NGINX_SOURCE_DIR}/src/core/nginx.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_log.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_palloc.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_array.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_list.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_hash.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_buf.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_queue.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_output_chain.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_string.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_parse.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_parse_time.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_inet.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_file.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_crc32.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_murmurhash.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_md5.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_sha1.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_rbtree.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_radix_tree.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_slab.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_times.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_shmtx.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_connection.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_cycle.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_spinlock.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_rwlock.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_cpuinfo.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_conf_file.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_module.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_resolver.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_open_file_cache.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_crypt.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_proxy_protocol.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_syslog.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_timer.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_posted.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_accept.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_udp.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_connect.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_openssl.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_pipe.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_errno.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_alloc.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_files.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_shmem.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_time.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_process.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_thread.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_socket.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_wsarecv.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_wsarecv_chain.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_udp_wsarecv.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_wsasend.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_wsasend_chain.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_win32_init.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_user.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_dlopen.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_event_log.c
-        ${NGINX_SOURCE_DIR}/src/os/win32/ngx_process_cycle.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_acceptex.c
-        ${NGINX_SOURCE_DIR}/src/event/modules/ngx_iocp_module.c
-        ${NGINX_SOURCE_DIR}/src/event/modules/ngx_win32_select_module.c
-        ${NGINX_SOURCE_DIR}/src/event/modules/ngx_win32_poll_module.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_openssl.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_openssl_cache.c
-        ${NGINX_SOURCE_DIR}/src/event/ngx_event_openssl_stapling.c
-        ${NGINX_SOURCE_DIR}/src/core/ngx_regex.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_core_module.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_special_response.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_request.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_parse.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_log_module.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_request_body.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_variables.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_script.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_upstream.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_upstream_round_robin.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_file_cache.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_huff_decode.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_huff_encode.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_write_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_header_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_chunked_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/v2/ngx_http_v2_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_range_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_gzip_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_postpone_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_ssi_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_charset_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_sub_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_addition_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_gunzip_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_userid_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_headers_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/ngx_http_copy_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_not_modified_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_slice_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/http/v2/ngx_http_v2.c
-        ${NGINX_SOURCE_DIR}/src/http/v2/ngx_http_v2_table.c
-        ${NGINX_SOURCE_DIR}/src/http/v2/ngx_http_v2_encode.c
-        ${NGINX_SOURCE_DIR}/src/http/v2/ngx_http_v2_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_static_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_gzip_static_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_dav_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_autoindex_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_index_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_random_index_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_mirror_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_try_files_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_auth_request_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_auth_basic_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_access_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_limit_conn_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_limit_req_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_realip_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_geo_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_map_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_split_clients_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_referer_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_rewrite_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_ssl_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_proxy_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_fastcgi_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_uwsgi_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_scgi_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_grpc_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_memcached_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_empty_gif_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_browser_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_secure_link_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_flv_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_mp4_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_upstream_hash_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_upstream_ip_hash_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_upstream_least_conn_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_upstream_random_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_upstream_keepalive_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_upstream_zone_module.c
-        ${NGINX_SOURCE_DIR}/src/http/modules/ngx_http_stub_status_module.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_core_module.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_handler.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_parse.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_ssl_module.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_pop3_module.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_pop3_handler.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_imap_module.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_imap_handler.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_smtp_module.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_smtp_handler.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_auth_http_module.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_proxy_module.c
-        ${NGINX_SOURCE_DIR}/src/mail/ngx_mail_realip_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_variables.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_script.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_handler.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_core_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_log_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_proxy_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_upstream.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_upstream_round_robin.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_write_filter_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_ssl_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_limit_conn_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_access_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_geo_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_map_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_split_clients_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_return_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_pass_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_set_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_upstream_hash_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_upstream_least_conn_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_upstream_random_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_upstream_zone_module.c
-        ${NGINX_SOURCE_DIR}/src/stream/ngx_stream_ssl_preread_module.c
-        ngx_modules.c
-)
-
-# 添加可执行文件 
-add_executable(nginx
-        ${nginx_HEADERS}
-        ${nginx_SOURCES}
-        ${NGINX_SOURCE_DIR}/conf/nginx.conf
-)
 
 # 链接库
 target_link_libraries(nginx
@@ -324,7 +132,7 @@ endif()
 AUTO_GROUP_FILES(
         TARGET nginx
         BASE_DIR ${CMAKE_SOURCE_DIR}/src
-        FILES ${nginx_HEADERS} ${nginx_SOURCES}
+        FILES ${nginx_HEADERS}
 )
 
 # 设置生成位置
@@ -354,15 +162,59 @@ foreach(dir ${NGINX_DIRECTORIES})
     file(MAKE_DIRECTORY ${dir})
 endforeach()
 
-# 创建基本的HTML文件
+# 创建完整的nginx欢迎页面
 if(NOT EXISTS "${NGINX_WORK_DIR}/html/index.html")
     file(WRITE "${NGINX_WORK_DIR}/html/index.html"
-        "<html><body><h1>Welcome to nginx!</h1></body></html>")
+"<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href=\"http://nginx.org/\">nginx.org</a>.<br/>
+Commercial support is available at
+<a href=\"http://nginx.com/\">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>")
 endif()
 
 if(NOT EXISTS "${NGINX_WORK_DIR}/html/50x.html")
     file(WRITE "${NGINX_WORK_DIR}/html/50x.html"
-        "<html><body><h1>An error occurred.</h1></body></html>")
+"<!DOCTYPE html>
+<html>
+<head>
+<title>Error</title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<h1>An error occurred.</h1>
+<p>Sorry, the page you are looking for is currently unavailable.<br/>
+Please try again later.</p>
+<p>If you are the system administrator of this resource then you should check
+the error log for details.</p>
+<p><em>Faithfully yours, nginx.</em></p>
+</body>
+</html>")
 endif()
 
 # 编译定义
@@ -379,6 +231,5 @@ if(MSVC)
     target_compile_options(nginx PRIVATE
         $<$<CONFIG:Debug>:/MDd>
         $<$<NOT:$<CONFIG:Debug>>:/MD>
-        /D_CRT_SECURE_NO_WARNINGS
     )
 endif()
