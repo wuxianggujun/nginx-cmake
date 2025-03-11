@@ -48,7 +48,8 @@ include_directories(
     # 修改 zlib 包含路径，添加构建目录
     ${ZLIB_DIR}
     ${ZLIB_BINARY_DIR}    # 添加这一行，因为 zconf.h 通常在构建目录中生成
-    ${PCRE_DIR}/include
+    ${PCRE_DIR}/include 
+        ${PCRE_BINARY_DIR}
     ${OPENSSL_INCLUDE_DIRS}
     ${OPENSSL_DIR}/include
     
@@ -289,6 +290,8 @@ target_link_options(nginx PRIVATE
 # 配置PCRE、ZLIB和OpenSSL支持 - 使用third_party中的库
 # PCRE配置
 if(NGX_HAVE_PCRE)
+    message(STATUS "PCRE support enabled")
+    message(STATUS "PCRE library: ${PCRE_LIBRARIES}")
     target_link_libraries(nginx PRIVATE ${PCRE_LIBRARIES})
     target_compile_definitions(nginx PRIVATE NGX_HAVE_PCRE=1)
 endif()

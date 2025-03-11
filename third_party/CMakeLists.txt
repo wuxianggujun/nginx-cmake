@@ -34,7 +34,11 @@ if(EXISTS "${PCRE_DIR}/CMakeLists.txt")
     
     # 设置PCRE的包含目录和库
     set(PCRE_INCLUDE_DIRS ${PCRE_DIR}/include CACHE PATH "PCRE include directory")
+    
     set(PCRE_LIBRARIES pcre CACHE PATH "PCRE library")
+    
+    # 调试输出PCRE库信息
+    message(STATUS "PCRE库: ${PCRE_LIBRARIES}")
 endif()
 
 # ZLIB配置
