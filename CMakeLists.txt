@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.20)
 
-project(nginx LANGUAGES C)
+project(nginx C)
 
 # 设置cmake模块路径
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -22,40 +22,42 @@ if(MSVC)
 endif()
 
 # 设置必要的目录结构
-set(NGINX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${NGINX_SOURCE_DIR}/cmake")
+set(NGINX_ROOT_DIR ${CMAKE_SOURCE_DIR})
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${NGINX_ROOT_DIR}/cmake")
 
 # 设置nginx工作目录
-set(NGINX_WORK_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(NGINX_INSTALL_DIR ${CMAKE_BINARY_DIR}/dist)
+set(NGINX_CONF_DIR ${NGINX_INSTALL_DIR}/conf)
+set(NGINX_LOGS_DIR ${NGINX_INSTALL_DIR}/logs)
+set(NGINX_TEMP_DIR ${NGINX_INSTALL_DIR}/temp)
 
 # 设置第三方库路径
-set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
-set(PCRE_DIR ${THIRD_PARTY_DIR}/pcre)
-set(ZLIB_DIR ${THIRD_PARTY_DIR}/zlib)
-set(OPENSSL_DIR ${THIRD_PARTY_DIR}/openssl-3.4)
+set(NGINX_THIRD_PARTY_DIR ${NGINX_ROOT_DIR}/third_party)
+set(NGINX_PCRE_DIR ${NGINX_THIRD_PARTY_DIR}/pcre)
+set(NGINX_ZLIB_DIR ${NGINX_THIRD_PARTY_DIR}/zlib)
+set(NGINX_OPENSSL_DIR ${NGINX_THIRD_PARTY_DIR}/openssl-3.4)
 
 # 包含目录设置
 include_directories(
-    ${NGINX_SOURCE_DIR}
-    ${NGINX_SOURCE_DIR}/src/core
-    ${NGINX_SOURCE_DIR}/src/event
-    ${NGINX_SOURCE_DIR}/src/event/modules
-    ${NGINX_SOURCE_DIR}/src/event/quic
-    ${NGINX_SOURCE_DIR}/src/os/win32  # 只包含Windows相关目录
+    ${NGINX_ROOT_DIR}
+    ${NGINX_ROOT_DIR}/src/core
+    ${NGINX_ROOT_DIR}/src/event
+    ${NGINX_ROOT_DIR}/src/event/modules
+    ${NGINX_ROOT_DIR}/src/event/quic
+    ${NGINX_ROOT_DIR}/src/os/win32  # 只包含Windows相关目录
 
     # 修改 zlib 包含路径，添加构建目录
-    ${ZLIB_DIR}
-    ${ZLIB_BINARY_DIR}    # 添加这一行，因为 zconf.h 通常在构建目录中生成
-    ${PCRE_DIR}/include 
-        ${PCRE_BINARY_DIR}
-    ${OPENSSL_INCLUDE_DIRS}
-    ${OPENSSL_DIR}/include
+    ${NGINX_ZLIB_DIR}
+    ${CMAKE_BINARY_DIR}/third_party/zlib
+    ${NGINX_PCRE_DIR}/include 
+        ${CMAKE_BINARY_DIR}/third_party/pcre
+    ${NGINX_OPENSSL_DIR}/include
     
-    ${NGINX_SOURCE_DIR}/src/http
-    ${NGINX_SOURCE_DIR}/src/http/modules
-    ${NGINX_SOURCE_DIR}/src/http/v2
-    ${NGINX_SOURCE_DIR}/src/mail
-    ${NGINX_SOURCE_DIR}/src/stream
+    ${NGINX_ROOT_DIR}/src/http
+    ${NGINX_ROOT_DIR}/src/http/modules
+    ${NGINX_ROOT_DIR}/src/http/v2
+    ${NGINX_ROOT_DIR}/src/mail
+    ${NGINX_ROOT_DIR}/src/stream
 )
 
 # 创建cmake目录
@@ -68,157 +70,52 @@ add_subdirectory(cmake)
 
 add_subdirectory(third_party)
 
+# 确保构建PCRE库
+if(EXISTS "${NGINX_PCRE_DIR}/CMakeLists.txt")
+    set(PCRE_BUILD_TESTS OFF CACHE BOOL "")
+    set(PCRE_BUILD_PCREGREP OFF CACHE BOOL "")
+    set(PCRE_BUILD_PCRECPP OFF CACHE BOOL "")
+    set(PCRE_STATIC ON CACHE BOOL "")
+    set(PCRE_SUPPORT_UTF ON CACHE BOOL "")
+    set(PCRE_SUPPORT_UNICODE_PROPERTIES ON CACHE BOOL "")
+    add_subdirectory(${NGINX_PCRE_DIR} ${CMAKE_BINARY_DIR}/third_party/pcre)
+endif()
+
+# 确保构建ZLIB库
+if(EXISTS "${NGINX_ZLIB_DIR}/CMakeLists.txt")
+    set(ZLIB_BUILD_SHARED_LIBS OFF CACHE BOOL "")
+    set(SKIP_INSTALL_ALL ON CACHE BOOL "")
+    add_subdirectory(${NGINX_ZLIB_DIR} ${CMAKE_BINARY_DIR}/third_party/zlib)
+    endif()
+    
+# 添加全局定义
+add_compile_definitions(
+    NGX_HAVE_PCRE=1
+    NGX_HAVE_ZLIB=1
+    NGX_HAVE_OPENSSL=1
+)
+
 # 添加src作为子目录进行构建
 add_subdirectory(src)
 
-file(GLOB_RECURSE nginx_HEADERS "${NGINX_SOURCE_DIR}/src/*.h")
+file(GLOB_RECURSE nginx_HEADERS "${NGINX_ROOT_DIR}/src/*.h")
 
-# 链接库
-target_link_libraries(nginx
-    PRIVATE
-    # OpenSSL库放在最前面
-    "${CMAKE_SOURCE_DIR}/third_party/openssl-3.4/lib/libssl.lib"
-    "${CMAKE_SOURCE_DIR}/third_party/openssl-3.4/lib/libcrypto.lib"
-    
-    # 系统库
-    kernel32.lib
-    user32.lib
-    advapi32.lib
-    ws2_32.lib
-    gdi32.lib
-    crypt32.lib
-    
-    # 其他第三方库
-    pcre
-    zlibstatic
-)
-
-# 链接器选项
-target_link_options(nginx
-        PRIVATE
-        /NODEFAULTLIB:libcmt.lib     # 排除静态运行时
-        /NODEFAULTLIB:libcmtd.lib    # 排除静态运行时调试版
-        /ignore:4217 /ignore:4286    # 忽略符号警告
-        /VERBOSE:LIB                   # 显示详细链接信息
-)
-
-# 配置PCRE、ZLIB和OpenSSL支持 - 使用third_party中的库
-# PCRE配置
-if(NGX_HAVE_PCRE)
-    message(STATUS "PCRE support enabled")
-    message(STATUS "PCRE library: ${PCRE_LIBRARIES}")
-    target_link_libraries(nginx PRIVATE ${PCRE_LIBRARIES})
-    target_compile_definitions(nginx PRIVATE NGX_HAVE_PCRE=1)
-endif()
-
-# ZLIB配置
-if(NGX_HAVE_ZLIB)
-    target_link_libraries(nginx PRIVATE zlibstatic)
-    target_compile_definitions(nginx PRIVATE NGX_HAVE_ZLIB=1)
-endif()
-
-
-# OpenSSL配置
-if(NGX_HAVE_OPENSSL)
-    target_link_libraries(nginx PRIVATE ${OPENSSL_LIBRARIES})
-    target_compile_definitions(nginx 
-        PRIVATE 
-        NGX_HAVE_OPENSSL=1
-    )
-endif()
-
-
-# 调用自动化分组函数
-AUTO_GROUP_FILES(
-        TARGET nginx
-        BASE_DIR ${CMAKE_SOURCE_DIR}/src
-        FILES ${nginx_HEADERS}
-)
-
-# 设置生成位置
-set_target_properties(nginx PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${NGINX_WORK_DIR}
-        RUNTIME_OUTPUT_DIRECTORY_DEBUG ${NGINX_WORK_DIR}
-        RUNTIME_OUTPUT_DIRECTORY_RELEASE ${NGINX_WORK_DIR}
-        RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${NGINX_WORK_DIR}
-        VS_DEBUGGER_WORKING_DIRECTORY ${NGINX_WORK_DIR}
-)
-
-# 创建必要的目录结构
-set(NGINX_DIRECTORIES
-        ${NGINX_WORK_DIR}/logs
-        ${NGINX_WORK_DIR}/conf
-        ${NGINX_WORK_DIR}/html
-        ${NGINX_WORK_DIR}/temp
-        ${NGINX_WORK_DIR}/temp/client_body_temp
-        ${NGINX_WORK_DIR}/temp/proxy_temp
-        ${NGINX_WORK_DIR}/temp/fastcgi_temp
-        ${NGINX_WORK_DIR}/temp/uwsgi_temp
-        ${NGINX_WORK_DIR}/temp/scgi_temp
-)
-
-# 创建所有必要的目录
-foreach(dir ${NGINX_DIRECTORIES})
-    file(MAKE_DIRECTORY ${dir})
+# 创建运行时目录
+foreach(DIR ${NGINX_CONF_DIR} ${NGINX_LOGS_DIR} ${NGINX_TEMP_DIR})
+    if(NOT EXISTS ${DIR})
+        file(MAKE_DIRECTORY ${DIR})
+    endif()
 endforeach()
 
-# 创建完整的nginx欢迎页面
-if(NOT EXISTS "${NGINX_WORK_DIR}/html/index.html")
-    file(WRITE "${NGINX_WORK_DIR}/html/index.html"
-"<!DOCTYPE html>
-<html>
-<head>
-<title>Welcome to nginx!</title>
-<style>
-    body {
-        width: 35em;
-        margin: 0 auto;
-        font-family: Tahoma, Verdana, Arial, sans-serif;
-    }
-</style>
-</head>
-<body>
-<h1>Welcome to nginx!</h1>
-<p>If you see this page, the nginx web server is successfully installed and
-working. Further configuration is required.</p>
-
-<p>For online documentation and support please refer to
-<a href=\"http://nginx.org/\">nginx.org</a>.<br/>
-Commercial support is available at
-<a href=\"http://nginx.com/\">nginx.com</a>.</p>
-
-<p><em>Thank you for using nginx.</em></p>
-</body>
-</html>")
-endif()
-
-if(NOT EXISTS "${NGINX_WORK_DIR}/html/50x.html")
-    file(WRITE "${NGINX_WORK_DIR}/html/50x.html"
-"<!DOCTYPE html>
-<html>
-<head>
-<title>Error</title>
-<style>
-    body {
-        width: 35em;
-        margin: 0 auto;
-        font-family: Tahoma, Verdana, Arial, sans-serif;
-    }
-</style>
-</head>
-<body>
-<h1>An error occurred.</h1>
-<p>Sorry, the page you are looking for is currently unavailable.<br/>
-Please try again later.</p>
-<p>If you are the system administrator of this resource then you should check
-the error log for details.</p>
-<p><em>Faithfully yours, nginx.</em></p>
-</body>
-</html>")
+# 欢迎页生成
+set(WELCOME_PAGE ${NGINX_CONF_DIR}/html/index.html)
+if(NOT EXISTS ${WELCOME_PAGE})
+    file(MAKE_DIRECTORY ${NGINX_CONF_DIR}/html)
+    file(WRITE ${WELCOME_PAGE} "<html><body><h1>Welcome to nginx!</h1></body></html>")
 endif()
 
 # 编译定义
-target_compile_definitions(nginx
+target_compile_definitions(${PROJECT_NAME}
     PRIVATE
     $<$<BOOL:${NGX_HAVE_PCRE}>:NGX_HAVE_PCRE=1>
     $<$<BOOL:${NGX_HAVE_ZLIB}>:NGX_HAVE_ZLIB=1>
@@ -228,7 +125,7 @@ target_compile_definitions(nginx
 # 添加编译选项
 if(MSVC)
     # 直接设置/MD或/MDd
-    target_compile_options(nginx PRIVATE
+    target_compile_options(${PROJECT_NAME} PRIVATE
         $<$<CONFIG:Debug>:/MDd>
         $<$<NOT:$<CONFIG:Debug>>:/MD>
     )

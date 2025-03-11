@@ -16,10 +16,11 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/mail
     ${CMAKE_CURRENT_SOURCE_DIR}/stream
     
-    # 第三方库包含目录
-    ${PCRE_INCLUDE_DIRS}
-    ${ZLIB_INCLUDE_DIRS}
-    ${OPENSSL_INCLUDE_DIRS}
+    # 第三方库包含目录 - 确保包含正确的路径
+    ${CMAKE_SOURCE_DIR}/third_party/pcre/include
+    ${CMAKE_SOURCE_DIR}/third_party/zlib
+    ${CMAKE_BINARY_DIR}/third_party/zlib    # zconf.h的生成路径
+    ${CMAKE_SOURCE_DIR}/third_party/openssl-3.4/include
 )
 
 # 平台特定包含目录
@@ -292,70 +293,55 @@ endif()
 # 合并所有源文件
 set(nginx_SOURCES ${common_SOURCES} ${platform_SOURCES})
 
-# 添加可执行文件
-add_executable(nginx 
-    ${nginx_HEADERS} 
-    ${nginx_SOURCES}
+# 创建可执行文件
+add_executable(nginx ${nginx_SOURCES})
+
+# 根据构建配置设置库路径变量
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_CONFIGURATION_TYPES MATCHES "Debug")
+    set(PCRE_LIB ${CMAKE_BINARY_DIR}/third_party/pcre/pcred.lib)
+    set(ZLIB_LIB ${CMAKE_BINARY_DIR}/third_party/zlib/zlibstaticd.lib)
+else()
+    set(PCRE_LIB ${CMAKE_BINARY_DIR}/third_party/pcre/pcre.lib)
+    set(ZLIB_LIB ${CMAKE_BINARY_DIR}/third_party/zlib/zlibstatic.lib)
+endif()
+
+# OpenSSL库路径
+set(SSL_LIB ${CMAKE_SOURCE_DIR}/third_party/openssl-3.4/lib/libssl.lib)
+set(CRYPTO_LIB ${CMAKE_SOURCE_DIR}/third_party/openssl-3.4/lib/libcrypto.lib)
+
+# 所有库的链接都在这里完成，且只在这里完成
+target_link_libraries(nginx
+    PRIVATE
+    # 系统库
+    kernel32.lib user32.lib advapi32.lib ws2_32.lib gdi32.lib crypt32.lib
+    
+    # 第三方库
+    ${PCRE_LIB}
+    ${ZLIB_LIB}
+    ${SSL_LIB}
+    ${CRYPTO_LIB}
 )
 
-# 设置编译选项 - 统一使用/MD
-if(MSVC)
-    target_compile_options(nginx PRIVATE
-        $<$<CONFIG:Debug>:/MDd>
-        $<$<NOT:$<CONFIG:Debug>>:/MD>
-        /D_CRT_SECURE_NO_WARNINGS
-    )
-else()
-    # Linux/Unix编译选项
-    target_compile_options(nginx PRIVATE
-        -Wall
-        -Wextra
-        -pipe
-    )
-endif()
+# 链接选项
+target_link_options(nginx PRIVATE
+    /NODEFAULTLIB:libcmt.lib
+    /NODEFAULTLIB:libcmtd.lib
+    /NODEFAULTLIB:msvcrt.lib
+    /ignore:4217
+    /ignore:4286
+)
 
-# 链接库 - 根据平台差异
-if(WIN32)
-    target_link_libraries(nginx
-        PRIVATE
-        # OpenSSL库
-        ${OPENSSL_LIBRARIES}
-        
-        # Windows系统库
-        kernel32.lib
-        user32.lib
-        advapi32.lib
-        ws2_32.lib
-        gdi32.lib
-        crypt32.lib
-        
-        # 第三方库
-        ${PCRE_LIBRARIES}
-        ${ZLIB_LIBRARIES}
-    )
-    
-    # Windows链接选项
-    target_link_options(nginx PRIVATE
-        /NODEFAULTLIB:libcmt.lib
-        /NODEFAULTLIB:libcmtd.lib
-        /ignore:4217
-        /ignore:4286
-    )
-else()
-    target_link_libraries(nginx
-        PRIVATE
-        # OpenSSL库
-        ${OPENSSL_LIBRARIES}
-        
-        # Unix/Linux系统库
-        pthread
-        dl
-        
-        # 第三方库
-        ${PCRE_LIBRARIES}
-        ${ZLIB_LIBRARIES}
-    )
-endif()
+# 编译器选项
+target_compile_options(nginx PRIVATE
+    /W3
+    /wd4996
+    /wd4055
+    /wd4152
+    /wd4204
+)
+
+# 安装目标
+install(TARGETS nginx DESTINATION ${NGINX_INSTALL_DIR})
 
 # 自动分组源文件
 AUTO_GROUP_FILES(
