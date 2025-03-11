@@ -16,10 +16,8 @@ if(MSVC)
     # 统一使用MT运行时库
     foreach(flag_var
         CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-        CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
-        if(${flag_var} MATCHES "/MD")
-            string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-        endif()
+        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE)
+        string(REGEX REPLACE "/MT" "/MD" ${flag_var} "${${flag_var}}")
     endforeach()
 endif()
 
@@ -270,21 +268,30 @@ add_executable(nginx
 # 链接库
 target_link_libraries(nginx
     PRIVATE
-    # Windows系统库
+    # OpenSSL库放在最前面
+    "${CMAKE_SOURCE_DIR}/third_party/openssl-3.4/lib/libssl.lib"
+    "${CMAKE_SOURCE_DIR}/third_party/openssl-3.4/lib/libcrypto.lib"
+    
+    # 系统库
     kernel32.lib
     user32.lib
     advapi32.lib
     ws2_32.lib
     gdi32.lib
     crypt32.lib
+    
+    # 其他第三方库
+    pcre
+    zlibstatic
 )
 
-# 链接选项
-target_link_options(nginx PRIVATE
-    /NODEFAULTLIB:msvcrtd.lib
-    /NODEFAULTLIB:libcmtd.lib
-        /ignore:4217   # 忽略符号已导入警告 
-        /ignore:4286   # 忽略符号已被导入警告
+# 链接器选项
+target_link_options(nginx
+        PRIVATE
+        /NODEFAULTLIB:libcmt.lib     # 排除静态运行时
+        /NODEFAULTLIB:libcmtd.lib    # 排除静态运行时调试版
+        /ignore:4217 /ignore:4286    # 忽略符号警告
+        /VERBOSE:LIB                   # 显示详细链接信息
 )
 
 # 配置PCRE、ZLIB和OpenSSL支持 - 使用third_party中的库
@@ -365,3 +372,13 @@ target_compile_definitions(nginx
     $<$<BOOL:${NGX_HAVE_ZLIB}>:NGX_HAVE_ZLIB=1>
     $<$<BOOL:${NGX_HAVE_OPENSSL}>:NGX_HAVE_OPENSSL=1>
 )
+
+# 添加编译选项
+if(MSVC)
+    # 直接设置/MD或/MDd
+    target_compile_options(nginx PRIVATE
+        $<$<CONFIG:Debug>:/MDd>
+        $<$<NOT:$<CONFIG:Debug>>:/MD>
+        /D_CRT_SECURE_NO_WARNINGS
+    )
+endif()

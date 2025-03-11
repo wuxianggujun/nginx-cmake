@@ -1,24 +1,26 @@
 # 在文件开头设置全局编译选项
 if(MSVC)
-    # 统一所有库使用静态运行时库
+    # 使用传统方式设置动态运行时库 - 不使用MSVC_RUNTIME_LIBRARY属性
     foreach(flag_var
         CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
         CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
         CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
         CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-        if(${flag_var} MATCHES "/MD")
-            string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-        endif()
+        # 替换/MT为/MD
+        string(REGEX REPLACE "/MT" "/MD" ${flag_var} "${${flag_var}}")
     endforeach()
     
-    # 更加严格地强制PCRE和ZLIB使用静态运行时
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+    # 直接设置MD或MDd标志，而不是使用MSVC_RUNTIME_LIBRARY
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MDd")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MD")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
 endif()
 
-# PCRE配置 - 确保使用静态运行时
+# PCRE配置 - 确保使用动态运行时
 if(EXISTS "${PCRE_DIR}/CMakeLists.txt")
-    # 强制PCRE使用静态运行时
-    set(PCRE_STATIC_RUNTIME ON CACHE BOOL "")
+    # 关键修改：静态运行时设为OFF
+    set(PCRE_STATIC_RUNTIME OFF CACHE BOOL "" FORCE)
     set(PCRE_BUILD_TESTS OFF CACHE BOOL "")
     set(PCRE_BUILD_PCREGREP OFF CACHE BOOL "")
     set(PCRE_BUILD_PCRECPP OFF CACHE BOOL "")
@@ -29,7 +31,7 @@ if(EXISTS "${PCRE_DIR}/CMakeLists.txt")
     set(PCRE_BUILD_PCRE16 OFF CACHE BOOL "")
     set(PCRE_BUILD_PCRE32 OFF CACHE BOOL "")
     
-    # 添加PCRE前确保静态运行时设置被应用
+    # 添加PCRE前确保动态运行时设置被应用
     add_subdirectory(${PCRE_DIR})
     
     # 设置PCRE的包含目录和库
@@ -41,7 +43,7 @@ if(EXISTS "${PCRE_DIR}/CMakeLists.txt")
     message(STATUS "PCRE库: ${PCRE_LIBRARIES}")
 endif()
 
-# ZLIB配置
+# ZLIB配置 - 确保使用动态运行时
 if(EXISTS "${ZLIB_DIR}")
     # 设置ZLIB选项
     set(ZLIB_BUILD_SHARED_LIBS OFF CACHE BOOL "")
