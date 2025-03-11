@@ -1,3 +1,5 @@
 /Makefile
 /objs/
 /tmp/
+/third_party/zlib/.github/
+/build/
