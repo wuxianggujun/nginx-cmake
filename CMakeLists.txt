@@ -37,7 +37,15 @@ set(NGINX_PCRE_DIR ${NGINX_THIRD_PARTY_DIR}/pcre)
 set(NGINX_ZLIB_DIR ${NGINX_THIRD_PARTY_DIR}/zlib)
 set(NGINX_OPENSSL_DIR ${NGINX_THIRD_PARTY_DIR}/openssl-3.4)
 
-# 包含目录设置
+# 将主项目变量传递给子项目
+set(PCRE_DIR ${NGINX_PCRE_DIR})
+set(ZLIB_DIR ${NGINX_ZLIB_DIR})
+set(OPENSSL_DIR ${NGINX_OPENSSL_DIR})
+
+# 先添加third_party子目录，让它处理所有的库依赖
+add_subdirectory(third_party)
+
+# 修改为可选的包含目录设置
 include_directories(
     ${NGINX_ROOT_DIR}
     ${NGINX_ROOT_DIR}/src/core
@@ -46,12 +54,10 @@ include_directories(
     ${NGINX_ROOT_DIR}/src/event/quic
     ${NGINX_ROOT_DIR}/src/os/win32  # 只包含Windows相关目录
 
-    # 修改 zlib 包含路径，添加构建目录
-    ${NGINX_ZLIB_DIR}
-    ${CMAKE_BINARY_DIR}/third_party/zlib
-    ${NGINX_PCRE_DIR}/include 
-        ${CMAKE_BINARY_DIR}/third_party/pcre
-    ${NGINX_OPENSSL_DIR}/include
+    # 使用third_party中设置的包含目录
+    ${PCRE_INCLUDE_DIRS}
+    ${ZLIB_INCLUDE_DIRS}
+    ${OPENSSL_INCLUDE_DIRS}
     
     ${NGINX_ROOT_DIR}/src/http
     ${NGINX_ROOT_DIR}/src/http/modules
@@ -68,31 +74,11 @@ endif()
 # 添加自动分组文件的cmake配置
 add_subdirectory(cmake)
 
-add_subdirectory(third_party)
-
-# 确保构建PCRE库
-if(EXISTS "${NGINX_PCRE_DIR}/CMakeLists.txt")
-    set(PCRE_BUILD_TESTS OFF CACHE BOOL "")
-    set(PCRE_BUILD_PCREGREP OFF CACHE BOOL "")
-    set(PCRE_BUILD_PCRECPP OFF CACHE BOOL "")
-    set(PCRE_STATIC ON CACHE BOOL "")
-    set(PCRE_SUPPORT_UTF ON CACHE BOOL "")
-    set(PCRE_SUPPORT_UNICODE_PROPERTIES ON CACHE BOOL "")
-    add_subdirectory(${NGINX_PCRE_DIR} ${CMAKE_BINARY_DIR}/third_party/pcre)
-endif()
-
-# 确保构建ZLIB库
-if(EXISTS "${NGINX_ZLIB_DIR}/CMakeLists.txt")
-    set(ZLIB_BUILD_SHARED_LIBS OFF CACHE BOOL "")
-    set(SKIP_INSTALL_ALL ON CACHE BOOL "")
-    add_subdirectory(${NGINX_ZLIB_DIR} ${CMAKE_BINARY_DIR}/third_party/zlib)
-    endif()
-    
 # 添加全局定义
 add_compile_definitions(
-    NGX_HAVE_PCRE=1
-    NGX_HAVE_ZLIB=1
-    NGX_HAVE_OPENSSL=1
+    $<$<BOOL:${NGX_HAVE_PCRE}>:NGX_HAVE_PCRE=1>
+    $<$<BOOL:${NGX_HAVE_ZLIB}>:NGX_HAVE_ZLIB=1>
+    $<$<BOOL:${NGX_HAVE_OPENSSL}>:NGX_HAVE_OPENSSL=1>
 )
 
 # 添加src作为子目录进行构建
@@ -113,14 +99,6 @@ if(NOT EXISTS ${WELCOME_PAGE})
     file(MAKE_DIRECTORY ${NGINX_CONF_DIR}/html)
     file(WRITE ${WELCOME_PAGE} "<html><body><h1>Welcome to nginx!</h1></body></html>")
 endif()
-
-# 编译定义
-target_compile_definitions(${PROJECT_NAME}
-    PRIVATE
-    $<$<BOOL:${NGX_HAVE_PCRE}>:NGX_HAVE_PCRE=1>
-    $<$<BOOL:${NGX_HAVE_ZLIB}>:NGX_HAVE_ZLIB=1>
-    $<$<BOOL:${NGX_HAVE_OPENSSL}>:NGX_HAVE_OPENSSL=1>
-)
 
 # 添加编译选项
 if(MSVC)

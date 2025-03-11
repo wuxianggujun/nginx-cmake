@@ -296,30 +296,16 @@ set(nginx_SOURCES ${common_SOURCES} ${platform_SOURCES})
 # 创建可执行文件
 add_executable(nginx ${nginx_SOURCES})
 
-# 根据构建配置设置库路径变量
-if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_CONFIGURATION_TYPES MATCHES "Debug")
-    set(PCRE_LIB ${CMAKE_BINARY_DIR}/third_party/pcre/pcred.lib)
-    set(ZLIB_LIB ${CMAKE_BINARY_DIR}/third_party/zlib/zlibstaticd.lib)
-else()
-    set(PCRE_LIB ${CMAKE_BINARY_DIR}/third_party/pcre/pcre.lib)
-    set(ZLIB_LIB ${CMAKE_BINARY_DIR}/third_party/zlib/zlibstatic.lib)
-endif()
-
-# OpenSSL库路径
-set(SSL_LIB ${CMAKE_SOURCE_DIR}/third_party/openssl-3.4/lib/libssl.lib)
-set(CRYPTO_LIB ${CMAKE_SOURCE_DIR}/third_party/openssl-3.4/lib/libcrypto.lib)
-
-# 所有库的链接都在这里完成，且只在这里完成
+# 使用变量从父作用域获取正确的库路径
 target_link_libraries(nginx
     PRIVATE
     # 系统库
     kernel32.lib user32.lib advapi32.lib ws2_32.lib gdi32.lib crypt32.lib
     
-    # 第三方库
-    ${PCRE_LIB}
-    ${ZLIB_LIB}
-    ${SSL_LIB}
-    ${CRYPTO_LIB}
+    # 直接使用变量
+    "$<$<CONFIG:Debug>:${PCRE_LIBRARIES_DEBUG}>$<$<NOT:$<CONFIG:Debug>>:${PCRE_LIBRARIES_RELEASE}>"
+    "$<$<CONFIG:Debug>:${ZLIB_LIBRARIES_DEBUG}>$<$<NOT:$<CONFIG:Debug>>:${ZLIB_LIBRARIES_RELEASE}>"
+    ${OPENSSL_LIBRARIES}
 )
 
 # 链接选项
