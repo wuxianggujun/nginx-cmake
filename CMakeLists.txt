@@ -11,16 +11,6 @@ include(auto_group_files)
 # 启用文件夹分组
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# 设置全局编译选项
-if(MSVC)
-    # 统一使用MT运行时库
-    foreach(flag_var
-        CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE)
-        string(REGEX REPLACE "/MT" "/MD" ${flag_var} "${${flag_var}}")
-    endforeach()
-endif()
-
 # 设置必要的目录结构
 set(NGINX_ROOT_DIR ${CMAKE_SOURCE_DIR})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${NGINX_ROOT_DIR}/cmake")
@@ -44,27 +34,6 @@ set(OPENSSL_DIR ${NGINX_OPENSSL_DIR})
 
 # 先添加third_party子目录，让它处理所有的库依赖
 add_subdirectory(third_party)
-
-# 修改为可选的包含目录设置
-include_directories(
-    ${NGINX_ROOT_DIR}
-    ${NGINX_ROOT_DIR}/src/core
-    ${NGINX_ROOT_DIR}/src/event
-    ${NGINX_ROOT_DIR}/src/event/modules
-    ${NGINX_ROOT_DIR}/src/event/quic
-    ${NGINX_ROOT_DIR}/src/os/win32  # 只包含Windows相关目录
-
-    # 使用third_party中设置的包含目录
-    ${PCRE_INCLUDE_DIRS}
-    ${ZLIB_INCLUDE_DIRS}
-    ${OPENSSL_INCLUDE_DIRS}
-    
-    ${NGINX_ROOT_DIR}/src/http
-    ${NGINX_ROOT_DIR}/src/http/modules
-    ${NGINX_ROOT_DIR}/src/http/v2
-    ${NGINX_ROOT_DIR}/src/mail
-    ${NGINX_ROOT_DIR}/src/stream
-)
 
 # 创建cmake目录
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
